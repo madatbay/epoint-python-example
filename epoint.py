@@ -20,11 +20,11 @@ class PaymentProcessor(ABC):
         pass
 
     @abstractmethod
-    def pay_with_saved_card(self, card_uid, invoice, amount):
+    def pay_with_saved_card(self, card_uid, invoice):
         pass
 
     @abstractmethod
-    def save_card_and_pay(self, invoice, amount):
+    def save_card_and_pay(self, invoice):
         pass
 
 
@@ -38,7 +38,7 @@ class EpointPaymentProcessor(PaymentProcessor):
     def _send_request(self, url_suffix, data, signature):
         url = self.EPOINT_BASE_URL + url_suffix
         res = requests.post(url, {"data": data, "signature": signature})
-        return res
+        return res.json()
 
     def format_data_signature(self, json_obj: dict) -> tuple[str, str]:
         json_string = json.dumps(json_obj)
@@ -57,7 +57,7 @@ class EpointPaymentProcessor(PaymentProcessor):
 
         return self._send_request("card-registration", data, signature)
 
-    def pay_with_saved_card(self, card_uid, invoice, amount):
+    def pay_with_saved_card(self, card_uid, invoice):
         data, signature = self.format_data_signature({
             "public_key": self.public_key,
             "language": "en",
@@ -68,7 +68,7 @@ class EpointPaymentProcessor(PaymentProcessor):
         })
         return self._send_request("execute-pay", data, signature)
 
-    def save_card_and_pay(self, invoice, amount):
+    def save_card_and_pay(self, invoice):
         data, signature = self.format_data_signature({
             "public_key": self.public_key,
             "language": "en",
@@ -88,11 +88,11 @@ class PaymentGateway:
     def save_card(self):
         return self.processor.save_card()
 
-    def pay_with_saved_card(self, card_uid, invoice, amount):
-        return self.processor.pay_with_saved_card(card_uid, invoice, amount)
+    def pay_with_saved_card(self, card_uid, invoice):
+        return self.processor.pay_with_saved_card(card_uid, invoice)
 
-    def save_card_and_pay(self, invoice, amount):
-        return self.processor.save_card_and_pay(invoice, amount)
+    def save_card_and_pay(self, invoice):
+        return self.processor.save_card_and_pay(invoice)
 
 
 epoint_processor = EpointPaymentProcessor()
